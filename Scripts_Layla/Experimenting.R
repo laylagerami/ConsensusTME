@@ -52,3 +52,32 @@ saveHeatmap<-function(data){
 saveHeatmap(res)
 
 ### PATHWAY ENRICHMENT
+head(bulkExpMatrix)
+
+# Extract Gene expression for Naive B cells
+NBC_data = data.frame(bulkExpMatrix[,1])
+colnames(NBC_data) = "Naive B Cell Expression"
+
+# First we need to convert HGNC to Entrez ID
+library('org.Hs.eg.db')
+NBC_data$Entrez = mapIds(org.Hs.eg.db, 
+       rownames(NBC_data),
+       'ENTREZID', 
+       'SYMBOL')
+
+# Now we can carry out enrichment :)
+library(clusterProfiler)
+
+geneList = as.numeric(as.character(NBC_data$`Naive B Cell Expression`))
+names(geneList) = as.character(NBC_data$Entrez)
+geneList = geneList[!is.na(names(geneList))]
+geneList = sort(geneList, decreasing = T)
+nbc_gsea = gseGO(geneList     = geneList,
+                 OrgDb        = org.Hs.eg.db,
+                 ont          = "BP",
+                 nPerm        = 1000,
+                 minGSSize    = 100,
+                 maxGSSize    = 500,
+                 pvalueCutoff = 0.5,
+                 verbose      = T)
+
